@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Tic Tac Toe</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+
+<!-- iOS "Add to Home Screen" support -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tic Tac Toe" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0a84ff" />
+<link rel="apple-touch-icon" href="icons/icon-180.png" />
+<link rel="icon" href="icons/icon-32.png" />
+<link rel="manifest" href="manifest.json" />
+
+<style>
+  :root {
+    --blue: #0a84ff;
+    --indigo: #5e5ce6;
+    --bg-top: #0a0a12;
+    --bg-bottom: #14141f;
+    --cell: rgba(255,255,255,0.06);
+    --cell-border: rgba(255,255,255,0.12);
+    --text: #f2f2f7;
+    --sub: rgba(242,242,247,0.6);
+    --x-color: #0a84ff;
+    --o-color: #ff9f0a;
+    --win: #30d158;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--bg-bottom), var(--bg-top));
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom);
+    user-select: none;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    padding-top: 8px;
+  }
+
+  .status {
+    font-size: 17px;
+    color: var(--sub);
+    min-height: 22px;
+    text-align: center;
+    transition: color 0.2s ease;
+  }
+
+  .status.win { color: var(--win); font-weight: 600; }
+
+  .scoreboard {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .score {
+    flex: 1;
+    background: var(--cell);
+    border: 1px solid var(--cell-border);
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+
+  .score .label {
+    font-size: 12px;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .score .value {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .score.x .value { color: var(--x-color); }
+  .score.o .value { color: var(--o-color); }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .cell {
+    background: var(--cell);
+    border: 1px solid var(--cell-border);
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: min(15vw, 64px);
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.2s ease;
+  }
+
+  .cell:active { transform: scale(0.94); }
+
+  .cell.x { color: var(--x-color); }
+  .cell.o { color: var(--o-color); }
+
+  .cell.pop { animation: pop 0.18s ease; }
+  @keyframes pop {
+    from { transform: scale(0.5); opacity: 0.3; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .cell.winning {
+    background: rgba(48, 209, 88, 0.18);
+    border-color: rgba(48, 209, 88, 0.5);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+  }
+
+  button {
+    flex: 1;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.08s ease;
+  }
+
+  button:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--blue);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: var(--cell);
+    color: var(--text);
+    border: 1px solid var(--cell-border);
+  }
+
+  .mode-toggle {
+    display: flex;
+    background: var(--cell);
+    border: 1px solid var(--cell-border);
+    border-radius: 14px;
+    padding: 4px;
+    width: 100%;
+  }
+
+  .mode-toggle button {
+    flex: 1;
+    background: transparent;
+    color: var(--sub);
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .mode-toggle button.active {
+    background: var(--indigo);
+    color: white;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <h1>Tic Tac Toe</h1>
+
+    <div class="mode-toggle">
+      <button id="mode-2p" class="active">2 Players</button>
+      <button id="mode-cpu">Vs CPU</button>
+    </div>
+
+    <div class="scoreboard">
+      <div class="score x">
+        <div class="label">Player X</div>
+        <div class="value" id="score-x">0</div>
+      </div>
+      <div class="score">
+        <div class="label">Ties</div>
+        <div class="value" id="score-t">0</div>
+      </div>
+      <div class="score o">
+        <div class="label">Player O</div>
+        <div class="value" id="score-o">0</div>
+      </div>
+    </div>
+
+    <div class="status" id="status">Player X's turn</div>
+
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+      <button class="btn-secondary" id="reset-scores">Reset Scores</button>
+      <button class="btn-primary" id="new-round">New Round</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const scoreXEl = document.getElementById('score-x');
+  const scoreOEl = document.getElementById('score-o');
+  const scoreTEl = document.getElementById('score-t');
+  const mode2pBtn = document.getElementById('mode-2p');
+  const modeCpuBtn = document.getElementById('mode-cpu');
+
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  let board = Array(9).fill(null);
+  let current = 'X';
+  let gameOver = false;
+  let vsCpu = false;
+  let scores = { X: 0, O: 0, T: 0 };
+
+  function render() {
+    boardEl.innerHTML = '';
+    board.forEach((val, i) => {
+      const c = document.createElement('div');
+      c.className = 'cell' + (val ? ' ' + val.toLowerCase() : '');
+      c.textContent = val || '';
+      c.dataset.index = i;
+      c.addEventListener('click', onCellClick);
+      boardEl.appendChild(c);
+    });
+  }
+
+  function checkWinner(b) {
+    for (const line of WIN_LINES) {
+      const [a, bb, c] = line;
+      if (b[a] && b[a] === b[bb] && b[a] === b[c]) {
+        return { winner: b[a], line };
+      }
+    }
+    if (b.every(x => x)) return { winner: 'tie', line: [] };
+    return null;
+  }
+
+  function onCellClick(e) {
+    if (gameOver) return;
+    const i = Number(e.currentTarget.dataset.index);
+    if (board[i]) return;
+    place(i, current);
+  }
+
+  function place(i, player) {
+    board[i] = player;
+    const cellEl = boardEl.children[i];
+    cellEl.textContent = player;
+    cellEl.classList.add(player.toLowerCase(), 'pop');
+
+    const result = checkWinner(board);
+    if (result) {
+      finishGame(result);
+      return;
+    }
+
+    current = current === 'X' ? 'O' : 'X';
+    updateStatus();
+
+    if (vsCpu && current === 'O' && !gameOver) {
+      setTimeout(cpuMove, 350);
+    }
+  }
+
+  function finishGame(result) {
+    gameOver = true;
+    if (result.winner === 'tie') {
+      statusEl.textContent = "It's a tie!";
+      statusEl.classList.remove('win');
+      scores.T++;
+      scoreTEl.textContent = scores.T;
+    } else {
+      statusEl.textContent = `Player ${result.winner} wins!`;
+      statusEl.classList.add('win');
+      scores[result.winner]++;
+      (result.winner === 'X' ? scoreXEl : scoreOEl).textContent = scores[result.winner];
+      result.line.forEach(i => boardEl.children[i].classList.add('winning'));
+    }
+  }
+
+  function updateStatus() {
+    if (gameOver) return;
+    statusEl.classList.remove('win');
+    statusEl.textContent = `Player ${current}'s turn` + (vsCpu && current === 'O' ? ' (CPU thinking...)' : '');
+  }
+
+  // Simple unbeatable-ish CPU: win if possible, block if needed, else take center/corner/random
+  function cpuMove() {
+    if (gameOver) return;
+    const empty = board.map((v, i) => v ? null : i).filter(v => v !== null);
+
+    function findWinning(player) {
+      for (const i of empty) {
+        const copy = board.slice();
+        copy[i] = player;
+        if (checkWinner(copy)?.winner === player) return i;
+      }
+      return null;
+    }
+
+    let move = findWinning('O');
+    if (move === null) move = findWinning('X');
+    if (move === null && board[4] === null) move = 4;
+    if (move === null) {
+      const corners = [0, 2, 6, 8].filter(i => board[i] === null);
+      if (corners.length) move = corners[Math.floor(Math.random() * corners.length)];
+    }
+    if (move === null) {
+      move = empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    place(move, 'O');
+  }
+
+  function newRound() {
+    board = Array(9).fill(null);
+    current = 'X';
+    gameOver = false;
+    render();
+    updateStatus();
+  }
+
+  function resetScores() {
+    scores = { X: 0, O: 0, T: 0 };
+    scoreXEl.textContent = 0;
+    scoreOEl.textContent = 0;
+    scoreTEl.textContent = 0;
+    newRound();
+  }
+
+  document.getElementById('new-round').addEventListener('click', newRound);
+  document.getElementById('reset-scores').addEventListener('click', resetScores);
+
+  mode2pBtn.addEventListener('click', () => {
+    vsCpu = false;
+    mode2pBtn.classList.add('active');
+    modeCpuBtn.classList.remove('active');
+    resetScores();
+  });
+
+  modeCpuBtn.addEventListener('click', () => {
+    vsCpu = true;
+    modeCpuBtn.classList.add('active');
+    mode2pBtn.classList.remove('active');
+    resetScores();
+  });
+
+  render();
+  updateStatus();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
