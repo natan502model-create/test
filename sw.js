@@ -1,8 +1,11 @@
-const CACHE = 'tic-tac-toe-v1';
+const CACHE = 'fittrack-v1';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './styles.css',
+  './foods.js',
+  './app.js',
   './icons/icon-32.png',
   './icons/icon-180.png',
   './icons/icon-192.png',
@@ -26,7 +29,17 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => cached);
+    })
   );
 });
